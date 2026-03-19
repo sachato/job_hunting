@@ -1,0 +1,77 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String        @id @default(cuid())
+  email        String        @unique
+  passwordHash String        @map("password_hash")
+  createdAt    DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime      @updatedAt @map("updated_at")
+  candidatures Candidature[]
+}
+
+model Entreprise {
+  id           String        @id @default(cuid())
+  nom          String
+  siteWeb      String?       @map("site_web")
+  secteur      String?
+  taille       String?
+  createdAt    DateTime      @default(now()) @map("created_at")
+  candidatures Candidature[]
+}
+
+model Candidature {
+  id              String     @id @default(cuid())
+  userId          String     @map("user_id")
+  user            User       @relation(fields: [userId], references: [id])
+  entrepriseId    String     @map("entreprise_id")
+  entreprise      Entreprise @relation(fields: [entrepriseId], references: [id])
+  poste           String
+  datePostulation DateTime   @map("date_postulation")
+  statut          String     @default("envisage")
+  contact         String?
+  emailContact    String?    @map("email_contact")
+  telephone       String?
+  salairePropose  Float?     @map("salaire_propose")
+  lienOffre       String?    @map("lien_offre")
+  createdAt       DateTime   @default(now()) @map("created_at")
+  updatedAt       DateTime   @updatedAt @map("updated_at")
+  notes           Note[]
+  documents       Document[]
+  rappels         Rappel[]
+}
+
+model Note {
+  id            String      @id @default(cuid())
+  candidatureId String      @map("candidature_id")
+  candidature   Candidature @relation(fields: [candidatureId], references: [id], onDelete: Cascade)
+  contenu       String
+  createdAt     DateTime    @default(now()) @map("created_at")
+}
+
+model Document {
+  id            String      @id @default(cuid())
+  candidatureId String      @map("candidature_id")
+  candidature   Candidature @relation(fields: [candidatureId], references: [id], onDelete: Cascade)
+  nom           String
+  url           String
+  type          String
+  createdAt     DateTime    @default(now()) @map("created_at")
+}
+
+model Rappel {
+  id            String      @id @default(cuid())
+  candidatureId String      @map("candidature_id")
+  candidature   Candidature @relation(fields: [candidatureId], references: [id], onDelete: Cascade)
+  date          DateTime
+  type          String
+  message       String
+  status        String      @default("a_faire")
+  createdAt     DateTime    @default(now()) @map("created_at")
+}
