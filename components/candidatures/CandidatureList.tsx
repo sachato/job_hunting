@@ -7,11 +7,12 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "@/components/ui/use-toast";
-import { STATUTS, getStatutColor, getStatutLabel, formatDate, formatSalaire } from "@/lib/utils";
+import { STATUTS, getStatutColor, formatDate, formatSalaire } from "@/lib/utils";
 import {
   Plus, Search, ChevronUp, ChevronDown, ExternalLink,
   Trash2, Eye, ChevronLeft, ChevronRight, Building2
 } from "lucide-react";
+import { useLanguage } from "@/components/providers/LanguageProvider";
 
 interface Candidature {
   id: string;
@@ -37,6 +38,7 @@ export function CandidatureList() {
   const [page, setPage] = useState(1);
   const [sortBy, setSortBy] = useState<SortField>("createdAt");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+  const { t } = useLanguage();
   const limit = 15;
 
   const fetchData = useCallback(async () => {
@@ -73,10 +75,10 @@ export function CandidatureList() {
   };
 
   const handleDelete = async (id: string, nom: string) => {
-    if (!confirm(`Supprimer la candidature chez ${nom} ?`)) return;
+    if (!confirm(`${t.list.deleteConfirm} ${nom} ?`)) return;
     const res = await fetch(`/api/candidatures/${id}`, { method: "DELETE" });
     if (res.ok) {
-      toast({ title: "Candidature supprimée" });
+      toast({ title: t.list.deleted });
       fetchData();
     }
   };
@@ -87,6 +89,15 @@ export function CandidatureList() {
   };
 
   const totalPages = Math.ceil(total / limit);
+  const resultsLabel = total > 1 ? t.list.results_plural : t.list.results;
+
+  const columns = [
+    { field: "entreprise" as SortField, label: t.list.columns.entreprise },
+    { field: "poste" as SortField, label: t.list.columns.poste },
+    { field: "statut" as SortField, label: t.list.columns.statut },
+    { field: "datePostulation" as SortField, label: t.list.columns.datePostulation },
+    { field: "createdAt" as SortField, label: t.list.columns.addedAt },
+  ];
 
   return (
     <div className="space-y-4">
@@ -95,7 +106,7 @@ export function CandidatureList() {
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
-            placeholder="Rechercher entreprise, poste..."
+            placeholder={t.list.search}
             value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(1); }}
             className="pl-9"
@@ -103,12 +114,14 @@ export function CandidatureList() {
         </div>
         <Select value={statut} onValueChange={(v) => { setStatut(v); setPage(1); }}>
           <SelectTrigger className="w-44">
-            <SelectValue placeholder="Tous les statuts" />
+            <SelectValue placeholder={t.list.allStatuts} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Tous les statuts</SelectItem>
+            <SelectItem value="all">{t.list.allStatuts}</SelectItem>
             {STATUTS.map((s) => (
-              <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+              <SelectItem key={s.value} value={s.value}>
+                {t.statuts[s.value as keyof typeof t.statuts] ?? s.label}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -116,7 +129,7 @@ export function CandidatureList() {
           <Link href="/candidatures/nouveau">
             <Button>
               <Plus className="w-4 h-4 mr-1" />
-              Nouvelle candidature
+              {t.list.newCandidature}
             </Button>
           </Link>
         </div>
@@ -127,13 +140,7 @@ export function CandidatureList() {
         <table className="w-full text-sm">
           <thead className="bg-slate-50 border-b">
             <tr>
-              {[
-                { field: "entreprise" as SortField, label: "Entreprise" },
-                { field: "poste" as SortField, label: "Poste" },
-                { field: "statut" as SortField, label: "Statut" },
-                { field: "datePostulation" as SortField, label: "Date postulation" },
-                { field: "createdAt" as SortField, label: "Ajouté le" },
-              ].map(({ field, label }) => (
+              {columns.map(({ field, label }) => (
                 <th
                   key={field}
                   className="text-left px-4 py-3 font-medium text-muted-foreground cursor-pointer hover:text-foreground select-none"
@@ -145,7 +152,9 @@ export function CandidatureList() {
                   </span>
                 </th>
               ))}
-              <th className="text-left px-4 py-3 font-medium text-muted-foreground">Salaire</th>
+              <th className="text-left px-4 py-3 font-medium text-muted-foreground">
+                {t.list.columns.salaire}
+              </th>
               <th className="px-4 py-3" />
             </tr>
           </thead>
@@ -164,51 +173,58 @@ export function CandidatureList() {
               <tr>
                 <td colSpan={7} className="px-4 py-12 text-center text-muted-foreground">
                   <Building2 className="w-8 h-8 mx-auto mb-2 opacity-30" />
-                  <p>Aucune candidature trouvée</p>
+                  <p>{t.list.empty}</p>
                   <Link href="/candidatures/nouveau" className="text-primary hover:underline text-sm mt-1 inline-block">
-                    Ajouter une candidature
+                    {t.list.addCandidature}
                   </Link>
                 </td>
               </tr>
             ) : (
-              candidatures.map((c) => (
-                <tr key={c.id} className="hover:bg-slate-50 transition-colors">
-                  <td className="px-4 py-3 font-medium">{c.entreprise.nom}</td>
-                  <td className="px-4 py-3 text-muted-foreground">{c.poste}</td>
-                  <td className="px-4 py-3">
-                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getStatutColor(c.statut)}`}>
-                      {getStatutLabel(c.statut)}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-muted-foreground">{formatDate(c.datePostulation)}</td>
-                  <td className="px-4 py-3 text-muted-foreground">{formatDate(c.createdAt)}</td>
-                  <td className="px-4 py-3 text-muted-foreground">{formatSalaire(c.salairePropose)}</td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-1 justify-end">
-                      {c.lienOffre && (
-                        <a href={c.lienOffre} target="_blank" rel="noopener noreferrer">
+              candidatures.map((c) => {
+                const statutLabel = t.statuts[c.statut as keyof typeof t.statuts] ?? c.statut;
+                return (
+                  <tr key={c.id} className="hover:bg-slate-50 transition-colors">
+                    <td className="px-4 py-3 font-medium">{c.entreprise.nom}</td>
+                    <td className="px-4 py-3 text-muted-foreground">{c.poste}</td>
+                    <td className="px-4 py-3">
+                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getStatutColor(c.statut)}`}>
+                        {statutLabel}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-muted-foreground">
+                      {formatDate(c.datePostulation, t.dateLocale)}
+                    </td>
+                    <td className="px-4 py-3 text-muted-foreground">
+                      {formatDate(c.createdAt, t.dateLocale)}
+                    </td>
+                    <td className="px-4 py-3 text-muted-foreground">{formatSalaire(c.salairePropose)}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-1 justify-end">
+                        {c.lienOffre && (
+                          <a href={c.lienOffre} target="_blank" rel="noopener noreferrer">
+                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                              <ExternalLink className="w-3.5 h-3.5" />
+                            </Button>
+                          </a>
+                        )}
+                        <Link href={`/candidatures/${c.id}`}>
                           <Button variant="ghost" size="icon" className="h-8 w-8">
-                            <ExternalLink className="w-3.5 h-3.5" />
+                            <Eye className="w-3.5 h-3.5" />
                           </Button>
-                        </a>
-                      )}
-                      <Link href={`/candidatures/${c.id}`}>
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                          <Eye className="w-3.5 h-3.5" />
+                        </Link>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-destructive hover:text-destructive"
+                          onClick={() => handleDelete(c.id, c.entreprise.nom)}
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
                         </Button>
-                      </Link>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-destructive hover:text-destructive"
-                        onClick={() => handleDelete(c.id, c.entreprise.nom)}
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </Button>
-                    </div>
-                  </td>
-                </tr>
-              ))
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })
             )}
           </tbody>
         </table>
@@ -217,7 +233,7 @@ export function CandidatureList() {
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex items-center justify-between text-sm text-muted-foreground">
-          <span>{total} résultat{total > 1 ? "s" : ""}</span>
+          <span>{total} {resultsLabel}</span>
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
@@ -228,7 +244,7 @@ export function CandidatureList() {
               <ChevronLeft className="w-4 h-4" />
             </Button>
             <span>
-              Page {page} / {totalPages}
+              {t.list.page} {page} / {totalPages}
             </span>
             <Button
               variant="outline"

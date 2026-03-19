@@ -3,8 +3,9 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { STATUTS, getStatutColor } from "@/lib/utils";
+import { STATUTS } from "@/lib/utils";
 import { TrendingUp, Briefcase, CheckCircle, Clock } from "lucide-react";
+import { useLanguage } from "@/components/providers/LanguageProvider";
 
 interface Stats {
   total: number;
@@ -15,6 +16,7 @@ interface Stats {
 export function StatsCards() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
+  const { t } = useLanguage();
 
   useEffect(() => {
     fetch("/api/stats")
@@ -44,28 +46,31 @@ export function StatsCards() {
 
   const topCards = [
     {
-      title: "Total candidatures",
+      title: t.stats.total,
       value: stats.total,
       icon: Briefcase,
       color: "text-blue-600",
       bg: "bg-blue-50",
     },
     {
-      title: "En cours",
-      value: (stats.byStatut["postule"] ?? 0) + (stats.byStatut["entretien1"] ?? 0) + (stats.byStatut["entretien2"] ?? 0),
+      title: t.stats.enCours,
+      value:
+        (stats.byStatut["postule"] ?? 0) +
+        (stats.byStatut["entretien1"] ?? 0) +
+        (stats.byStatut["entretien2"] ?? 0),
       icon: Clock,
       color: "text-yellow-600",
       bg: "bg-yellow-50",
     },
     {
-      title: "Offres reçues",
+      title: t.stats.offresRecues,
       value: stats.byStatut["offre"] ?? 0,
       icon: CheckCircle,
       color: "text-green-600",
       bg: "bg-green-50",
     },
     {
-      title: "Taux de réponse",
+      title: t.stats.tauxReponse,
       value: `${stats.tauxReponse}%`,
       icon: TrendingUp,
       color: "text-purple-600",
@@ -96,19 +101,21 @@ export function StatsCards() {
         })}
       </div>
 
-      {/* Répartition par statut */}
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-medium text-muted-foreground">Répartition par statut</CardTitle>
+          <CardTitle className="text-sm font-medium text-muted-foreground">
+            {t.stats.repartitionStatut}
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex gap-3 flex-wrap">
             {STATUTS.map((statut) => {
               const count = stats.byStatut[statut.value] ?? 0;
+              const label = t.statuts[statut.value as keyof typeof t.statuts] ?? statut.label;
               return (
                 <div key={statut.value} className="flex items-center gap-2">
                   <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statut.color}`}>
-                    {statut.label}
+                    {label}
                   </span>
                   <span className="text-sm font-semibold">{count}</span>
                 </div>

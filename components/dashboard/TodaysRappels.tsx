@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "@/components/ui/use-toast";
 import { Bell, Check, Clock } from "lucide-react";
+import { useLanguage } from "@/components/providers/LanguageProvider";
 
 interface Rappel {
   id: string;
@@ -24,6 +25,7 @@ interface Rappel {
 export function TodaysRappels() {
   const [rappels, setRappels] = useState<Rappel[]>([]);
   const [loading, setLoading] = useState(true);
+  const { t } = useLanguage();
 
   useEffect(() => {
     fetch("/api/stats")
@@ -40,7 +42,7 @@ export function TodaysRappels() {
     });
     if (res.ok) {
       setRappels((prev) => prev.filter((r) => r.id !== id));
-      toast({ title: "Rappel marqué comme fait" });
+      toast({ title: t.rappels.markedDone });
     }
   };
 
@@ -49,7 +51,7 @@ export function TodaysRappels() {
       <CardHeader className="pb-3">
         <CardTitle className="text-base flex items-center gap-2">
           <Bell className="w-4 h-4" />
-          Rappels du jour
+          {t.rappels.title}
           {rappels.length > 0 && (
             <span className="ml-auto bg-destructive text-destructive-foreground text-xs rounded-full w-5 h-5 flex items-center justify-center">
               {rappels.length}
@@ -70,28 +72,31 @@ export function TodaysRappels() {
         ) : rappels.length === 0 ? (
           <div className="text-center py-6 text-muted-foreground">
             <Clock className="w-8 h-8 mx-auto mb-2 opacity-30" />
-            <p className="text-sm">Aucun rappel pour aujourd&apos;hui</p>
+            <p className="text-sm">{t.rappels.empty}</p>
           </div>
         ) : (
           <div className="space-y-3">
-            {rappels.map((r) => (
-              <div key={r.id} className="border rounded-lg p-3 space-y-2">
-                <div>
-                  <Link href={`/candidatures/${r.candidature.id}`} className="text-sm font-medium hover:underline">
-                    {r.candidature.entreprise.nom}
-                  </Link>
-                  <p className="text-xs text-muted-foreground">{r.candidature.poste}</p>
+            {rappels.map((r) => {
+              const typeLabel = t.typesRappel[r.type as keyof typeof t.typesRappel] ?? r.type;
+              return (
+                <div key={r.id} className="border rounded-lg p-3 space-y-2">
+                  <div>
+                    <Link href={`/candidatures/${r.candidature.id}`} className="text-sm font-medium hover:underline">
+                      {r.candidature.entreprise.nom}
+                    </Link>
+                    <p className="text-xs text-muted-foreground">{r.candidature.poste}</p>
+                  </div>
+                  <p className="text-sm">{r.message}</p>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground capitalize">{typeLabel}</span>
+                    <Button size="sm" variant="outline" onClick={() => markDone(r.id)} className="h-7 text-xs">
+                      <Check className="w-3 h-3 mr-1" />
+                      {t.rappels.done}
+                    </Button>
+                  </div>
                 </div>
-                <p className="text-sm">{r.message}</p>
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-muted-foreground capitalize">{r.type}</span>
-                  <Button size="sm" variant="outline" onClick={() => markDone(r.id)} className="h-7 text-xs">
-                    <Check className="w-3 h-3 mr-1" />
-                    Fait
-                  </Button>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </CardContent>

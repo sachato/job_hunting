@@ -12,15 +12,17 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-
-const navItems = [
-  { href: "/dashboard", label: "Tableau de bord", icon: LayoutDashboard },
-  { href: "/candidatures", label: "Candidatures", icon: Briefcase },
-  { href: "/kanban", label: "Pipeline Kanban", icon: Kanban },
-];
+import { useLanguage } from "@/components/providers/LanguageProvider";
 
 export function Sidebar() {
   const pathname = usePathname();
+  const { t } = useLanguage();
+
+  const navItems = [
+    { href: "/dashboard", label: t.sidebar.dashboard, icon: LayoutDashboard },
+    { href: "/candidatures", label: t.sidebar.candidatures, icon: Briefcase },
+    { href: "/kanban", label: t.sidebar.kanban, icon: Kanban },
+  ];
 
   return (
     <aside className="w-64 border-r bg-slate-50 flex flex-col h-screen sticky top-0">
@@ -31,7 +33,7 @@ export function Sidebar() {
           </div>
           <div>
             <h1 className="font-bold text-sm">Job Tracker</h1>
-            <p className="text-xs text-muted-foreground">Suivi de candidatures</p>
+            <p className="text-xs text-muted-foreground">{t.sidebar.subtitle}</p>
           </div>
         </div>
       </div>
@@ -66,7 +68,7 @@ export function Sidebar() {
           onClick={() => signOut({ callbackUrl: "/login" })}
         >
           <LogOut className="w-4 h-4 mr-2" />
-          Se déconnecter
+          {t.sidebar.logout}
         </Button>
       </div>
     </aside>

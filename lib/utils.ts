@@ -25,8 +25,8 @@ export function getStatutColor(statut: string): string {
   return STATUTS.find((s) => s.value === statut)?.color ?? "bg-gray-100 text-gray-700";
 }
 
-export function formatDate(date: Date | string): string {
-  return new Intl.DateTimeFormat("fr-FR", {
+export function formatDate(date: Date | string, locale = "fr-FR"): string {
+  return new Intl.DateTimeFormat(locale, {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
