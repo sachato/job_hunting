@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Bash(cmd /c \"sc query type= all | findstr /i postgresql\")"
+      "Bash(cmd /c \"sc query type= all | findstr /i postgresql\")",
+      "Bash(npx jest:*)"
     ]
   }
 }
