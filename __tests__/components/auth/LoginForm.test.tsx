@@ -26,8 +26,11 @@ jest.mock("@/components/ui/button", () => ({
   ),
 }));
 
+// On retire type/required pour éviter la validation HTML5 native en jsdom
 jest.mock("@/components/ui/input", () => ({
-  Input: (props: React.InputHTMLAttributes<HTMLInputElement>) => <input {...props} />,
+  Input: ({ type: _t, required: _r, ...props }: React.InputHTMLAttributes<HTMLInputElement>) => (
+    <input {...props} />
+  ),
 }));
 
 jest.mock("@/components/ui/label", () => ({
@@ -96,6 +99,34 @@ describe("LoginForm", () => {
     await waitFor(() => {
       expect(mockPush).toHaveBeenCalledWith("/dashboard");
     });
+  });
+
+  it("affiche une erreur de validation pour un email invalide", async () => {
+    const user = userEvent.setup();
+    render(<LoginForm />);
+
+    await user.type(screen.getByLabelText("Email"), "pasunemail");
+    await user.type(screen.getByLabelText("Mot de passe"), "password123");
+    await user.click(screen.getByRole("button", { name: /se connecter/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText("Email invalide")).toBeInTheDocument();
+    });
+    expect(mockSignIn).not.toHaveBeenCalled();
+  });
+
+  it("affiche une erreur de validation si le mot de passe est vide", async () => {
+    const user = userEvent.setup();
+    render(<LoginForm />);
+
+    await user.type(screen.getByLabelText("Email"), "test@test.com");
+    // Pas de mot de passe
+    await user.click(screen.getByRole("button", { name: /se connecter/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText("Mot de passe requis")).toBeInTheDocument();
+    });
+    expect(mockSignIn).not.toHaveBeenCalled();
   });
 
   it("affiche une erreur toast si signIn retourne une erreur", async () => {

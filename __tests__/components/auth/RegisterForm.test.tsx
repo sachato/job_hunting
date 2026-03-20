@@ -26,8 +26,11 @@ jest.mock("@/components/ui/button", () => ({
   ),
 }));
 
+// On retire type/required pour éviter la validation HTML5 native en jsdom
 jest.mock("@/components/ui/input", () => ({
-  Input: (props: React.InputHTMLAttributes<HTMLInputElement>) => <input {...props} />,
+  Input: ({ type: _t, required: _r, ...props }: React.InputHTMLAttributes<HTMLInputElement>) => (
+    <input {...props} />
+  ),
 }));
 
 jest.mock("@/components/ui/label", () => ({
@@ -98,6 +101,34 @@ describe("RegisterForm", () => {
     await waitFor(() => {
       expect(mockPush).toHaveBeenCalledWith("/dashboard");
     });
+  });
+
+  it("affiche une erreur de validation pour un email invalide", async () => {
+    const user = userEvent.setup();
+    render(<RegisterForm />);
+
+    await user.type(screen.getByLabelText("Email"), "pasunemail");
+    await user.type(screen.getByLabelText("Mot de passe"), "password123");
+    await user.click(screen.getByRole("button", { name: /créer mon compte/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText("Email invalide")).toBeInTheDocument();
+    });
+    expect(mockFetch).not.toHaveBeenCalled();
+  });
+
+  it("affiche une erreur de validation si mot de passe trop court", async () => {
+    const user = userEvent.setup();
+    render(<RegisterForm />);
+
+    await user.type(screen.getByLabelText("Email"), "test@test.com");
+    await user.type(screen.getByLabelText("Mot de passe"), "court");
+    await user.click(screen.getByRole("button", { name: /créer mon compte/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText(/8 caractères/i)).toBeInTheDocument();
+    });
+    expect(mockFetch).not.toHaveBeenCalled();
   });
 
   it("affiche une erreur toast si l'API retourne une erreur", async () => {

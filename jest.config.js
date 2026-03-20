@@ -13,6 +13,7 @@ const config = {
     "<rootDir>/node_modules/",
     "<rootDir>/.next/",
     "<rootDir>/e2e/",
+    "<rootDir>/__tests__/utils/",
   ],
   collectCoverageFrom: [
     "lib/**/*.ts",
