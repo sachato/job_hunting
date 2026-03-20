@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  pull_request:
+    branches:
+      - dev
+  push:
+    branches:
+      - dev
+
+jobs:
+  tests:
+    name: Tests Jest
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Installer les dépendances
+        run: npm ci
+
+      - name: Lancer les tests
+        run: npm test -- --ci --forceExit
+        env:
+          DATABASE_URL: postgresql://fake:fake@localhost:5432/fake
+          NEXTAUTH_SECRET: ci-secret-placeholder
